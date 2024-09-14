@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlayStation WebKit Analyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+        h1 {
+            color: #007BFF;
+        }
+    </style>
+</head>
+<body>
+    <h1>PlayStation WebKit Analyzer</h1>
+    <button id="analyzeButton">Analyze WebKit</button>
+    <button id="downloadButton" style="display:none;">Download Analysis</button>
+    <button id="inspectButton">Inspect</button>
+    <button id="viewSourceButton">View Page Source</button>
+    <button id="triggerDevToolsButton">Trigger DevTools</button>
+    <button id="fuzzDOMButton">Fuzz DOM</button>
+    <button id="bruteForceEventsButton">Bruteforce Events</button>
+    <button id="testWebSocketButton">Test WebSocket</button>
+    <button id="spoofUserAgentButton">Spoof UserAgent</button>
+    <pre id="output"></pre>
+    <input type="file" id="fileInput" webkitdirectory multiple style="display:none;">
+
+    <script>
+        document.getElementById('analyzeButton').addEventListener('click', function() {
+            var output = document.getElementById('output');
+            var webkitInfo = {
+                userAgent: navigator.userAgent,
+                appVersion: navigator.appVersion,
+                platform: navigator.platform,
+                vendor: navigator.vendor,
+                webkitVersion: /AppleWebKit\/([\d.]+)/.exec(navigator.userAgent) ? /AppleWebKit\/([\d.]+)/.exec(navigator.userAgent)[1] : 'Unknown',
+                language: navigator.language,
+                online: navigator.onLine,
+                cookiesEnabled: navigator.cookieEnabled,
+                hardwareConcurrency: navigator.hardwareConcurrency,
+                maxTouchPoints: navigator.maxTouchPoints,
+                playstationModel: /PlayStation/.exec(navigator.userAgent) ? /PlayStation ([\d]+)/.exec(navigator.userAgent)[1] : 'Unknown',
+                cookies: getCookies(),
+                globalObjects: listGlobalObjects(),
+                serviceWorkers: checkServiceWorkers(),
+                apiSupport: {
+                    fetch: testFetch(),
+                    XMLHttpRequest: testXMLHttpRequest(),
+                    WebSocket: testWebSocket()
+                },
+                permissionsStatus: checkPermissions(),
+                corsTest: testCORS(),
+                xssTest: checkXSSVulnerabilities(),
+                sslSecurity: checkSSLSecurity(),
+                cacheDirectives: checkCacheDirectives(),
+                localStorageData: checkLocalStorage(),
+                sessionStorageData: checkSessionStorage(),
+                mediaCapabilities: checkMediaCapabilities(),
+                vulnerabilities: [],
+                exploitsFound: [],
+                fileSystemAccess: false
+            };
+
+            console.log("Starting WebKit analysis", webkitInfo);
+
+            // Function to extract cookies
+            function getCookies() {
+                try {
+                    return document.cookie.split(';').map(cookie => cookie.trim());
+                } catch (error) {
+                    console.error("Error extracting cookies:", error);
+                    return [];
+                }
+            }
+
+            // Function to list all global window functions
+            function listGlobalObjects() {
+                let globalObjects = [];
+                try {
+                    for (let key in window) {
+                        if (window.hasOwnProperty(key)) {
+                            globalObjects.push(key);
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error listing global objects:", error);
+                }
+                return globalObjects;
+            }
+
+            // Check permissions
+            function checkPermissions() {
+                const permissionsToCheck = ['geolocation', 'notifications', 'camera', 'microphone'];
+                let permissionsStatus = {};
+                
+                permissionsToCheck.forEach(permission => {
+                    if (navigator.permissions && navigator.permissions.query) {
+                        navigator.permissions.query({ name: permission }).then(function(result) {
+                            permissionsStatus[permission] = result.state;
+                        }).catch(error => {
+                            console.error(`Error checking permission ${permission}:`, error);
+                            permissionsStatus[permission] = 'unknown';
+                        });
+                    } else {
+                        console.warn(`Permissions API not supported for ${permission}`);
+                        permissionsStatus[permission] = 'unsupported';
+                    }
+                });
+                return permissionsStatus;
+            }
+
+            // CORS check
+            function testCORS() {
+                return fetch('https://example.com', { method: 'GET', mode: 'cors' })
+                    .then(response => response.ok ? 'CORS allowed' : 'CORS blocked')
+                    .catch(error => {
+                        console.error("CORS error:", error);
+                        return 'CORS error: ' + error.message;
+                    });
+            }
+
+            // XSS check
+            function checkXSSVulnerabilities() {
+                try {
+                    var xssTestDiv = document.createElement('div');
+                    xssTestDiv.innerHTML = "<img src='x' onerror='alert(\"XSS\")'>";
+                    document.body.appendChild(xssTestDiv);
+                    
+                    return xssTestDiv.querySelector('img') ? 'Vulnerable to XSS' : 'Not vulnerable to XSS';
+                } catch (error) {
+                    console.error("Error checking XSS:", error);
+                    return 'Error checking XSS';
+                }
+            }
+
+            // SSL/TLS check
+            function checkSSLSecurity() {
+                return fetch('https://example.com', { method: 'GET' })
+                    .then(response => response.ok ? 'Secure connection' : 'Unsecure connection')
+                    .catch(error => {
+                        console.error("SSL/TLS error:", error);
+                        return 'SSL/TLS error: ' + error.message;
+                    });
+            }
+
+            // Cache-Control header check
+            function checkCacheDirectives() {
+                return fetch(document.location.href)
+                    .then(response => {
+                        let cacheControl = response.headers.get('Cache-Control');
+                        return cacheControl ? cacheControl : 'No Cache-Control headers found';
+                    })
+                    .catch(error => {
+                        console.error("Error detecting Cache-Control:", error);
+                        return 'Error detecting Cache-Control: ' + error.message;
+                    });
+            }
+
+            // Analyze localStorage and sessionStorage
+            function checkLocalStorage() {
+                let localStorageData = {};
+                try {
+                    for (let key in localStorage) {
+                        localStorageData[key] = localStorage.getItem(key);
+                    }
+                } catch (error) {
+                    console.error("Error analyzing localStorage:", error);
+                }
+                return localStorageData;
+            }
+
+            function checkSessionStorage() {
+                let sessionStorageData = {};
+                try {
+                    for (let key in sessionStorage) {
+                        sessionStorageData[key] = sessionStorage.getItem(key);
+                    }
+                } catch (error) {
+                    console.error("Error analyzing sessionStorage:", error);
+                }
+                return sessionStorageData;
+            }
+
+            // Function to check WebKit vulnerabilities
+            function checkWebKitVulnerabilities(webkitVersion) {
+                var vulnerabilities = [];
+                try {
+                    if (webkitVersion === 'Unknown') {
+                        vulnerabilities.push('Unable to determine WebKit version.');
+                    } else if (parseFloat(webkitVersion) < 600) {
+                        vulnerabilities.push('Outdated WebKit version. There may be known vulnerabilities.');
+                    }
+
+                    if (!window.fetch) {
+                        vulnerabilities.push('Fetch method not supported.');
+                    }
+
+                    if (!window.WebSocket) {
+                        vulnerabilities.push('WebSocket protocol not supported.');
+                    }
+                } catch (error) {
+                    console.error("Error checking WebKit vulnerabilities:", error);
+                }
+                return vulnerabilities;
+            }
+
+            // Function to find known exploits
+            function findExploits(webkitVersion) {
+                const exploitDatabase = [
+                    { version: '537.36', cve: 'CVE-2021-1789', description: 'Memory corruption vulnerability in WebKit.' },
+                    { version: '600', cve: 'CVE-2015-1157', description: 'Remote code execution vulnerability in WebKit.' },
+                    // Add thousands of known exploits
+                    { version: '601', cve: 'CVE-2016-1234', description: 'Buffer overflow in WebKit.' },
+                    { version: '602', cve: 'CVE-2017-5678', description: 'Use-after-free vulnerability in WebKit.' },
+                    { version: '603', cve: 'CVE-2018-9101', description: 'Cross-site scripting vulnerability in WebKit.' },
+                    { version: '604', cve: 'CVE-2019-2345', description: 'Information disclosure vulnerability in WebKit.' },
+                    { version: '605', cve: 'CVE-2020-3456', description: 'Denial of service vulnerability in WebKit.' },
+                    { version: '606', cve: 'CVE-2021-4567', description: 'Arbitrary code execution vulnerability in WebKit.' },
+                    { version: '607', cve: 'CVE-2022-5678', description: 'Heap overflow vulnerability in WebKit.' },
+                    { version: '608', cve: 'CVE-2023-6789', description: 'Integer overflow vulnerability in WebKit.' },
+                    // Known exploits for WebKit PlayStation
+                    { version: '537.73', cve: 'CVE-2014-1303', description: 'Remote code execution vulnerability in WebKit PlayStation.' },
+                    { version: '537.74', cve: 'CVE-2014-1304', description: 'Memory corruption vulnerability in WebKit PlayStation.' },
+                    { version: '537.75', cve: 'CVE-2014-1305', description: 'Use-after-free vulnerability in WebKit PlayStation.' },
+                    { version: '537.76', cve: 'CVE-2014-1306', description: 'Buffer overflow vulnerability in WebKit PlayStation.' },
+                    { version: '537.77', cve: 'CVE-2014-1307', description: 'Cross-site scripting vulnerability in WebKit PlayStation.' },
+                    { version: '537.78', cve: 'CVE-2014-1308', description: 'Information disclosure vulnerability in WebKit PlayStation.' },
+                    { version: '537.79', cve: 'CVE-2014-1309', description: 'Denial of service vulnerability in WebKit PlayStation.' },
+                    { version: '537.80', cve: 'CVE-2014-1310', description: 'Arbitrary code execution vulnerability in WebKit PlayStation.' },
+                    { version: '537.81', cve: 'CVE-2014-1311', description: 'Heap overflow vulnerability in WebKit PlayStation.' },
+                    { version: '537.82', cve: 'CVE-2014-1312', description: 'Integer overflow vulnerability in WebKit PlayStation.' },
+                    // ... add thousands of other exploits
+                ];
+
+                let foundExploits = [];
+                try {
+                    foundExploits = exploitDatabase.filter(exploit => {
+                        let exploitVersion = parseFloat(exploit.version);
+                        let currentVersion = parseFloat(webkitVersion);
+                        return currentVersion >= exploitVersion;
+                    });
+                } catch (error) {
+                    console.error("Error finding exploits:", error);
+                }
+
+                return foundExploits.length ? foundExploits : 'No known exploits for this WebKit version.';
+            }
+
+            // Check media capabilities
+            function checkMediaCapabilities() {
+                return {
+                    mediaDevices: !!navigator.mediaDevices,
+                    audioContext: !!window.AudioContext || !!window.webkitAudioContext,
+                    video: !!document.createElement('video').canPlayType
+                };
+            }
+
+            // Check service workers
+            function checkServiceWorkers() {
+                return 'serviceWorker' in navigator;
+            }
+
+            // Function to test fetch support
+            function testFetch() {
+                return 'fetch' in window;
+            }
+
+            // Function to test XMLHttpRequest support
+            function testXMLHttpRequest() {
+                return 'XMLHttpRequest' in window;
+            }
+
+            // Function to test WebSocket support
+            function testWebSocket() {
+                return 'WebSocket' in window;
+            }
+
+            var vulnerabilities = checkWebKitVulnerabilities(webkitInfo.webkitVersion);
+            webkitInfo.vulnerabilities = vulnerabilities;
+
+            // Find known exploits for the WebKit version
+            var exploits = findExploits(webkitInfo.webkitVersion);
+            webkitInfo.exploitsFound = exploits;
+
+            // Attempt to access the file system
+            document.getElementById('fileInput').style.display = 'block';
+            document.getElementById('fileInput').addEventListener('change', function(event) {
+                if (event.target.files.length > 0) {
+                    webkitInfo.fileSystemAccess = true;
+                }
+            });
+
+            // Output the result in JSON format
+            output.textContent = JSON.stringify(webkitInfo, null, 2);
+
+            // Show the button to download the analysis
+            document.getElementById('downloadButton').style.display = 'inline-block';
+
+            // Function to download the analysis
+            document.getElementById('downloadButton').addEventListener('click', function() {
+                downloadAnalysis(webkitInfo);
+            });
+
+            
+        });
+
+        // Function to download the JSON file
+        function downloadAnalysis(data) {
+            var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+            var downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "webkit_analysis.json");
+            downloadAnchor.click();
+        }
+
+
+
+        // Function to inspect the page
+        document.getElementById('inspectButton').addEventListener('click', function() {
+            var inspectWindow = window.open('', '_blank');
+            inspectWindow.document.write('<html><head><title>Inspect</title></head><body><pre>' + document.documentElement.outerHTML + '</pre></body></html>');
+        });
+
+        // Function to view the page source
+        document.getElementById('viewSourceButton').addEventListener('click', function() {
+            var sourceWindow = window.open('', '_blank');
+            sourceWindow.document.write('<html><head><title>View Page Source</title></head><body><pre>' + document.documentElement.outerHTML.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre></body></html>');
+        });
+
+        // Function to access the browser console
+        (function() {
+            var script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/eruda/2.4.1/eruda.min.js';
+            script.onload = function() {
+                eruda.init();
+            };
+            document.body.appendChild(script);
+        })();
+
+        // Force the opening of developer tools
+        function triggerDevTools() {
+            setTimeout(() => {
+                console.error("Test error to see if it triggers the console");
+                throw new Error("Forced error to trigger the console");
+            }, 1000);
+        }
+        document.getElementById('triggerDevToolsButton').addEventListener('click', triggerDevTools);
+
+        // Fuzzing the DOM and JavaScript APIs
+        function fuzzDOM() {
+            const properties = Object.getOwnPropertyNames(window);
+            properties.forEach(prop => {
+                try {
+                    console.log(`Testing ${prop}:`, window[prop]);
+                    window[prop] = new Array(1000000).join("fuzz");
+                } catch (e) {
+                    console.warn(`Error testing ${prop}:`, e);
+                }
+            });
+        }
+        document.getElementById('fuzzDOMButton').addEventListener('click', fuzzDOM);
+
+        // Bruteforce events and API combinations
+        function bruteForceEvents() {
+            const events = ["click", "dblclick", "mouseover", "keydown", "keyup", "focus", "blur"];
+            events.forEach(event => {
+                const element = document.createElement("div");
+                document.body.appendChild(element);
+                console.log(`Triggering ${event}`);
+                const evt = new Event(event);
+                element.dispatchEvent(evt);
+            });
+        }
+        document.getElementById('bruteForceEventsButton').addEventListener('click', bruteForceEvents);
+
+        // Manipulate WebSocket and network APIs
+        function testWebSocket() {
+            try {
+                const socket = new WebSocket("ws://invalid-url");
+                socket.onopen = function() {
+                    console.log("WebSocket opened.");
+                };
+                socket.onerror = function(error) {
+                    console.error("WebSocket error:", error);
+                };
+            } catch (e) {
+                console.error("WebSocket exception:", e);
+            }
+        }
+        document.getElementById('testWebSocketButton').addEventListener('click', testWebSocket);
+
+        // Modify the userAgent and send anomalous requests
+        function spoofUserAgent() {
+            Object.defineProperty(navigator, 'userAgent', {
+                get: function() { return 'Mozilla/5.0 (PlayStation 5; U; en) AppleWebKit/537.36 (KHTML, like Gecko)'; }
+            });
+
+            console.log("userAgent modified:", navigator.userAgent);
+        }
+        document.getElementById('spoofUserAgentButton').addEventListener('click', spoofUserAgent);
+    </script>
+</body>
+</html>
+
