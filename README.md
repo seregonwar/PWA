@@ -52,3 +52,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Acknowledgements
 
 - Thanks to the [Eruda](https://github.com/liriliri/eruda) project from which I derived the DevConsole.
+
+# **Disclaimer**
+This project was developed in support of another, namely the [overflow](https://github.com/seregonwar/Overflow) project, in all likelihood, given the fact that the project in this repository is more complete I will migrate the functions of the overflow project into this one, this will not affect the development of either project since both projects are compatible. This is not an exploit but aims to find flaws in the console's WebKit by analyzing the packages it works with and running active code directly on the browser seeing the effects in real time, so the software works on any browser and you can also test it on your computer or any console you want without a usable devtools.
