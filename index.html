@@ -51,6 +51,10 @@
     <input type="file" id="fileInput" webkitdirectory multiple style="display:none;">
 
     <script>
+        function showFeedback(message) {
+            alert(message);
+        }
+
         document.getElementById('analyzeButton').addEventListener('click', function() {
             var output = document.getElementById('output');
             var webkitInfo = {
@@ -324,9 +328,10 @@
             // Function to download the JSON file
             document.getElementById('downloadButton').addEventListener('click', function() {
                 downloadAnalysis(webkitInfo);
+                showFeedback('Analysis downloaded successfully!');
             });
 
-            
+            showFeedback('WebKit analysis completed!');
         });
 
         // Function to download the JSON file
@@ -338,18 +343,18 @@
             downloadAnchor.click();
         }
 
-
-
         // Function to inspect the page
         document.getElementById('inspectButton').addEventListener('click', function() {
             var inspectWindow = window.open('', '_blank');
             inspectWindow.document.write('<html><head><title>Inspect</title></head><body><pre>' + document.documentElement.outerHTML + '</pre></body></html>');
+            showFeedback('Page inspection opened in a new tab!');
         });
 
         // Function to view the page source
         document.getElementById('viewSourceButton').addEventListener('click', function() {
             var sourceWindow = window.open('', '_blank');
             sourceWindow.document.write('<html><head><title>View Page Source</title></head><body><pre>' + document.documentElement.outerHTML.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre></body></html>');
+            showFeedback('Page source opened in a new tab!');
         });
 
         // Function to access the browser console
@@ -358,6 +363,7 @@
             script.src = 'https://cdnjs.cloudflare.com/ajax/libs/eruda/2.4.1/eruda.min.js';
             script.onload = function() {
                 eruda.init();
+                showFeedback('Developer tools initialized!');
             };
             document.body.appendChild(script);
         })();
@@ -368,6 +374,7 @@
                 console.error("Test error to see if it triggers the console");
                 throw new Error("Forced error to trigger the console");
             }, 1000);
+            showFeedback('Developer tools triggered!');
         }
         document.getElementById('triggerDevToolsButton').addEventListener('click', triggerDevTools);
 
@@ -382,6 +389,7 @@
                     console.warn(`Error testing ${prop}:`, e);
                 }
             });
+            showFeedback('DOM fuzzing completed!');
         }
         document.getElementById('fuzzDOMButton').addEventListener('click', fuzzDOM);
 
@@ -395,6 +403,7 @@
                 const evt = new Event(event);
                 element.dispatchEvent(evt);
             });
+            showFeedback('Event bruteforcing completed!');
         }
         document.getElementById('bruteForceEventsButton').addEventListener('click', bruteForceEvents);
 
@@ -411,6 +420,7 @@
             } catch (e) {
                 console.error("WebSocket exception:", e);
             }
+            showFeedback('WebSocket test completed!');
         }
         document.getElementById('testWebSocketButton').addEventListener('click', testWebSocket);
 
@@ -421,6 +431,7 @@
             });
 
             console.log("userAgent modified:", navigator.userAgent);
+            showFeedback('UserAgent spoofed successfully!');
         }
         document.getElementById('spoofUserAgentButton').addEventListener('click', spoofUserAgent);
     </script>
@@ -643,6 +654,7 @@
 
         document.getElementById('executeScriptButton').addEventListener('click', function() {
             eval(document.getElementById('scriptArea').value);
+            showFeedback('Script executed successfully!');
         });
 
         document.getElementById('copyCSRFScriptButton').addEventListener('click', function() {
@@ -654,6 +666,7 @@
 
         document.getElementById('executeCSRFScriptButton').addEventListener('click', function() {
             eval(document.getElementById('csrfScriptArea').value);
+            showFeedback('CSRF Script executed successfully!');
         });
 
         document.getElementById('copySQLInjectionScriptButton').addEventListener('click', function() {
@@ -665,6 +678,7 @@
 
         document.getElementById('executeSQLInjectionScriptButton').addEventListener('click', function() {
             eval(document.getElementById('sqlInjectionScriptArea').value);
+            showFeedback('SQL Injection Script executed successfully!');
         });
 
         document.getElementById('copyLFIScriptButton').addEventListener('click', function() {
@@ -676,6 +690,7 @@
 
         document.getElementById('executeLFIScriptButton').addEventListener('click', function() {
             eval(document.getElementById('lfiScriptArea').value);
+            showFeedback('LFI Script executed successfully!');
         });
 
         document.getElementById('copyDirTraversalScriptButton').addEventListener('click', function() {
@@ -687,6 +702,7 @@
 
         document.getElementById('executeDirTraversalScriptButton').addEventListener('click', function() {
             eval(document.getElementById('dirTraversalScriptArea').value);
+            showFeedback('Directory Traversal Script executed successfully!');
         });
 
         document.getElementById('copyOpenRedirectScriptButton').addEventListener('click', function() {
@@ -698,6 +714,7 @@
 
         document.getElementById('executeOpenRedirectScriptButton').addEventListener('click', function() {
             eval(document.getElementById('openRedirectScriptArea').value);
+            showFeedback('Open Redirect Script executed successfully!');
         });
 
         document.getElementById('applyUserAgentButton').addEventListener('click', function() {
@@ -706,6 +723,7 @@
                 get: function() { return selectedUserAgent; }
             });
             console.log("User Agent modified to:", navigator.userAgent);
+            showFeedback('User Agent applied successfully!');
         });
     </script>
 </body>
